@@ -5,7 +5,7 @@
 %%
 %% 本样例文档中用到了吕琦同学的博士论文的提高和部分内容，在此对他表示感谢。
 %%
-\documentclass[phd,macfonts]{njuthesis}
+\documentclass[master,macfonts]{njuthesis}
 %% njuthesis 文档类的可选参数有：
 %%   nobackinfo 取消封二页导师签名信息。注意，按照南大的规定，是需要签名页的。
 %%   phd/master/bachelor 选择博士/硕士/学士论文
@@ -54,37 +54,37 @@
 % 设置论文的中文封面
 
 % 论文标题，不可换行
-\title{数据中心网络模型研究}
+% \title{基于代数变换的数值程序全局优化方法}
 % 如果论文标题过长，可以分两行，第一行用\titlea{}定义，第二行用\titleb{}定义，将上面的\title{}注释掉
-% \titlea{半轻衰变$D^+\to \omega(\phi)e^+\nu_e$的研究}
-% \titleb{和弱衰变$J/\psi \to D_s^{(*)-}e^+\nu_e$的寻找}
+\titlea{基于随机代数变换的}
+\titleb{数值程序全局优化方法}
 
 % 论文作者姓名
-\author{韦小宝}
+\author{王协}
 % 论文作者联系电话
-\telphone{13671413272}
+\telphone{15150540414}
 % 论文作者电子邮件地址
-\email{xiaobao.wei@gmail.com}
+\email{290113699@qq.com}
 % 论文作者学生证号
-\studentnum{MG0033011}
+\studentnum{MG1533063}
 % 论文作者入学年份（年级）
-\grade{2010}
+\grade{2015}
 % 导师姓名职称
-\supervisor{陈近南~~教授}
+\supervisor{汤恩义~~助理研究员}
 % 导师的联系电话
-\supervisortelphone{13671607471}
+\supervisortelphone{13813967842}
 % 论文作者的学科与专业方向
-\major{计算机软件与理论}
+\major{计算机科学与技术}
 % 论文作者的研究方向
-\researchfield{计算机网络与信息安全}
+\researchfield{软件工程}
 % 论文作者所在院系的中文名称
 \department{计算机科学与技术系}
 % 论文作者所在学校或机构的名称。此属性可选，默认值为``南京大学''。
 \institute{南京大学}
 % 论文的提交日期，需设置年、月、日。
-\submitdate{2013年5月10日}
+\submitdate{2018年5月10日}
 % 论文的答辩日期，需设置年、月、日。
-\defenddate{2013年6月1日}
+\defenddate{2018年6月1日}
 % 论文的定稿日期，需设置年、月、日。此属性可选，默认值为最后一次编译时的日期，精确到日。
 %% \date{2013年5月1日}
 
@@ -92,13 +92,13 @@
 % 设置论文的英文封面
 
 % 论文的英文标题，不可换行
-\englishtitle{A Research on Network Infrastructures for Data Centers}
+\englishtitle{Global Optimization of Numerical Programs via Stochastic Algebraic Transformation}
 % 论文作者姓名的拼音
-\englishauthor{WEI Xiao-Bao}
+\englishauthor{Wang Xie}
 % 导师姓名职称的英文
-\englishsupervisor{Professor CHEN Jin-Nan}
+\englishsupervisor{Asssociate Professor Tang En-Yi}
 % 论文作者学科与专业的英文名
-\englishmajor{Computer Software and Theory}
+\englishmajor{Computer Science and Technology}
 % 论文作者所在院系的英文名称
 \englishdepartment{Department of Computer Science and Technology}
 % 论文作者所在学校或机构的英文名称。此属性可选，默认值为``Nanjing University''。
@@ -107,7 +107,7 @@
 % 格式，即``Month day, year''，其中``Month''为月份的英文名全称，首字母大写；``day''为
 % 该月中日期的阿拉伯数字表示；``year''为年份的四位阿拉伯数字表示。此属性可选，默认值为最后
 % 一次编译时的日期。
-\englishdate{May 1, 2013}
+\englishdate{May 1, 2018}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % 设置论文的中文摘要
@@ -124,10 +124,10 @@
 
 % 设置英文摘要页面的论文标题及副标题的第一行。
 % 此属性可选，其默认值为使用|\englishtitle|命令所设置的论文标题
-\englishabstracttitlea{A Research on Network Infrastructures}
+\englishabstracttitlea{Global Optimization of Numerical Programs}
 % 设置英文摘要页面的论文标题及副标题的第二行。
 % 此属性可选，其默认值为空白
-\englishabstracttitleb{for Data Centers}
+\englishabstracttitleb{via Stochastic Algebraic Transformation}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{document}
@@ -135,7 +135,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % 制作国家图书馆封面（博士学位论文才需要）
-\makenlctitle
+% \makenlctitle
 % 制作中文封面
 \maketitle
 % 制作英文封面
@@ -149,23 +149,92 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % 论文的中文摘要
 \begin{abstract}
-复杂网络的研究可上溯到20世纪60年代对ER网络的研究。90年后代随着Internet
-的发展，以及对人类社会、通信网络、生物网络、社交网络等各领域研究的深入，
-发现了小世界网络和无尺度现象等普适现象与方法。对复杂网络的定性定量的科
-学理解和分析，已成为如今网络时代科学研究的一个重点课题。
 
-在此背景下，由于云计算时代的到来，本文针对面向云计算的数据中心网络基础
-设施设计中的若干问题，进行了几方面的研究。………………
+编写正确、高效并且易维护的软件代码在软件工程领域是一件富有挑战性的工作。
+对于数值计算程序来说尤为如此，因为数值计算程序常常是一些安全性至关重要然
+而计算资源又极其有限的系统的核心部件。软件工程师们往往希望使用高效的浮点
+数类型来编写代码，若是如此，他们必须使用计算稳定的数值算法来实现这样的系
+统，并且实现过程中会引入大量的精度相关的操作，导致程序非常的复杂并且难以
+维护。另一方面，如果软件工程师们使用高精度类型来实现这样的系统，虽然代码
+非常的清晰可读，并且正确性得以保证，但是相较于浮点数类型的数值计算程序，
+其计算效率会慢上成百上千倍。
+
+针对上述问题，本文提出了一种全局优化方法，能够将高精度类型编写的数值计算
+程序自动优化成为高效并且正确的浮点类型的数值计算程序。这样一来，软件工程
+师们只需要按照需求中的数学公式编写清晰且易维护的高精度代码，该优化方法可
+以自动将这样的代码转换成为与之等价的、正确并且高效的浮点类型的代码。本文
+的主要工作如下：
+
+\begin{itemize}
+  \item 
+  本文提出了一种全局优化方法，能够将数值计算程序转换成为与其等价的浮点类
+  型的数值计算程序。该优化方法能够从全局上对程序的计算过程进行优化，进而
+  使得编程人员只需以要用高精度类型来设计以及实现数值计算程序。
+  \item
+  基于上述全局优化方法，通过一种随机代数变换的方法，我们实现了一个全局优
+  化工具，该工具以高精度类型程序作为输入，能够自动生成在数学上与之等价的
+  数值计算过程，并在这些等价的计算过程中寻找在浮点精度下计算稳定的计算形
+  式，生成优化后程序。
+  \item 
+  我们在一些测试程序以及GNU科学计算库上评估了我们的优化工具，我们的工具
+  能够成功的检测到这些程序中不稳定的计算过程并实现对这些程序的优化。
+\end{itemize}
+
+
 % 中文关键词。关键词之间用中文全角分号隔开，末尾无标点符号。
-\keywords{小世界理论；网络模型；数据中心}
+\keywords{程序优化，数值计算，随机算法}
 \end{abstract}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % 论文的英文摘要
 \begin{englishabstract}
-\blindtext
+
+Writing correct, efficient and maintainable software is a challeging
+task in software engineering. This is especially true for numerical 
+programs as numerical software is often the core components in the 
+safety-critical but resource-limited area. Engineers want to develop 
+efficient numerical programs, which often involves floating-points
+numbers with limited precision. In this case, engineers need to 
+implement the software carefully with stable numerical algorithms 
+and a lot of precision-specific operations, which makes the software 
+complicated and difficult to maintain. On the other hand, infinite 
+precision arithmetic hatches neat and correct numerical code, which 
+makes the software easy to maintain. But it is thousands of times 
+slower with large memeory requirments.
+
+In order to solve above problems, this paper proposes a global
+optimization framework that transforms numerical programs directly
+following the mathematical formulation to the efficient floating-point
+numerical programs with numerically stable algorithms. The numerical 
+software developer just needs to provide a numerical program that is 
+programing directly following the mathematical formulation from 
+software requirments. Our framework changes the calculation of the 
+direct program and generates an equivalent program in fixed-precision
+floating-point arithmetic with stable numerical algorithms. 
+
+The main contriutions of this paper are as follows:
+
+\begin{itemize}
+  \item 
+  We design an optimization framework that transforms a numerical program
+  to its stable fixed-precision implemention. The framework is able to 
+  optimize the calculation globally, which allows numerical software 
+  developers to think and design their numerical programs in terms of real  
+  number directly.
+  \item 
+  We implement our global optimization framework with a stochastic algebraic
+  transformation technique, which randomly searches the mathematically
+  equivalent process of the input program with a few algebraic algorithms 
+  and generates the optimized code with an automatic verification of numerical
+  stablility.
+  \item 
+  We evaluate our approch on a few test subjects from the literature and also
+  the GNU Scientific Library. Our toolchain successfully detects and diagnoses
+  instablilities in the subjects.
+\end{itemize}
+
 % 英文关键词。关键词之间用英文半角逗号隔开，末尾无符号。
-\englishkeywords{Small World, Network Model, Data Center}
+\englishkeywords{Numerical calculation, Program optimization, Stochastic methods}
 \end{englishabstract}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

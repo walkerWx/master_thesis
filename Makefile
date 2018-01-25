@@ -38,7 +38,7 @@ $(THESIS).pdf: $(CLS) $(INSTITUTE_LOGO) $(INSTITUTE_NAME) $(THESIS).tex $(THESIS
 	xelatex $(THESIS).tex
 	bibtex $(THESIS)
 	xelatex $(THESIS).tex
-	xelatex $(THESIS).tex
+	open $(THESIS).pdf
 
 ###### clean
 
