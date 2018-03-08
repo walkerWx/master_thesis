@@ -34,7 +34,7 @@ $(CLS): $(SOURCES)
 
 master_thesis:	 $(THESIS).pdf
 
-$(THESIS).pdf: $(CLS) $(INSTITUTE_LOGO) $(INSTITUTE_NAME) $(THESIS).tex $(THESISBIB)
+$(THESIS).pdf: $(CLS) $(INSTITUTE_LOGO) $(INSTITUTE_NAME) $(THESIS).tex $(THESISBIB) framework.tex
 	xelatex $(THESIS).tex
 	bibtex $(THESIS)
 	xelatex $(THESIS).tex
