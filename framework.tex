@@ -1,5 +1,6 @@
 \chapter{基于随机代数变换的数值程序优化框架}\label{chapter_framework}
 
+\section{优化实例}
 在本章中，我们举一个具体的例子来阐释整体的程序优化过程。如图\ref{fig:midarc}所示，在复平面内有两个单位复数$z_1,z_2$，我们需要计算这两个负数在复平面上的角平分线所对应的单位复数$z_3$。显而易见的，由于$z_1,z_2$均为单位复数，计算$z_3$只需要通过以下公式进行计算：
 
 \begin{align}\label{eq:fpex}
@@ -241,6 +242,408 @@
 % TODO
 
 \subsection{随机代数变换}
+
+在路径提取模块中，我们得到了不稳定输入域对应的计算过程对应的代数表达式，在这一个模块中，我们需要寻找能够代替该计算过程的稳定的计算表达式。我们知道，一个计算问题的计算方法是多种多样的，例如经典的求解非线性方程组的解便有牛顿下山法，牛顿迭代法，弦截法等多种不同的计算方式，即便是对于同一种计算方式，使用不同的精度进行实现时其代码的计算稳定性也是不一样的。对于一个复杂的计算程序，数值计算专家需要投入大量的精力去寻找一种稳定的计算方式，来解决该计算问题，并且这样的实现中往往会掺杂许多与计算逻辑无关的精度控制的代码，不仅会耗费专家与程序员们的大量精力，而且会使得程序难以理解，难以维护。举一个具体的实例，glibc科学计算库中的$sin$、$cos$函数的实现总代码行数大概为1000行，而与之对应的，iRRAM任意精度数值计算库中这两个函数的实现总共不到200行，同样的一个函数的实现，由于glibc是通过浮点精度实现，需要对程序的计算误差进行控制，导致了程序总代码量是任意精度实现的5倍。在这一个模块中，我们通过一种计算式随机代数变换的方法，能够自动的将原来非常直接易懂的任意精度代码转换成为高效然而复杂的浮点精度代码。
+
+\subsubsection{随机代数变换算法}
+
+本模块所介绍的这样的自动转换的过程从本质上来讲是一个搜索的过程，我们将数值计算专家所具备的专业领域知识收集成一个规则库的形式，我们应用规则库中的规则对原来不稳定的计算代数式进行等价的变换，然后去寻找稳定的计算形式。具体的搜索过程如算法\ref{alg:stoctrans}所示，对于每一个不稳定的计算代数式，我们会维护一个等价计算代数式集合，在搜索过程的一开始，此集合只包含了上一模块中提取得到的不稳定的计算代数式（算法\ref{alg:stoctrans}第2行），紧接着，我们会在该集合中随机选取一个计算代数式，并在规则库$R_{opt}$中随机选取一条转换规则，并在这个这个计算代数式上运用这条规则得到一个新的与原代数式在数学上等价的计算代数式$e'$（算法\ref{alg:stoctrans}第7行），然后我们需要通过区间分析的技术去验证新产生的计算式$e'$的计算稳定性，若$e'$计算稳定，则$e'$便是我们需要找的稳定的计算过程，否则，我们将$e'$添加到等价计算代数式集合$E_{af}$中去，继续迭代执行整个搜索过程，直到我们找到一个稳定的计算代数式或是搜索超时。值得注意的是，当计算超时时，便意味着优化框架并没有找到等价的稳定的计算过程，此时我们为了保证最终优化后程序的正确性，对于这部分计算过程，我们会保留其原来的任意精度的实现。
+
+\begin{algorithm}[tb]
+  \caption{Recursive Algebraic Transformation}
+  \label{alg:stoctrans}
+\begin{algorithmic}[1]
+\REQUIRE $S_{AF}$ \hfill {{\footnotesize$//$}\small set of algebraic forms}
+\ENSURE $M_{T}$  {{\footnotesize$//$}\small map every input form to a stable expression} %\hfill [e_1,\cdots,e_n]
+    \FORALL {$af \in S_{AF}$}
+      \STATE $E_{af}$ $\leftarrow$ \{$af$\}; \hfill {{\footnotesize$//$}\small build an equivalent set for search} \label{alg:stoctrans:eqset}
+      \STATE $e_t$ $\leftarrow$ NIL; \hfill {{\footnotesize$//$}\small the target expression for substitution}
+      \REPEAT
+        \STATE $e$ $\leftarrow$ selectRandom($E_{af}$); \label{alg:stoctrans:expselect}%{{\footnotesize$//$ select an equivalent exp}}
+        \STATE $rule$ $\leftarrow$ pickStochasticConform($R_{opt}$, $e$); \label{alg:stoctrans:rulepick}
+        \STATE $e'$ $\leftarrow$ transform($e$, $rule$); \label{alg:stoctrans:applytrans}
+        \IF{stableVerification($e'$)} \label{alg:stoctrans:stableverify}
+          \STATE $e_t$ $\leftarrow$ $e'$ \label{alg:stoctrans:getet}
+        \ELSE
+          \STATE $E_{af}$.add($e'$); \label{alg:stoctrans:putbackep}%\hfill {{\footnotesize$//$}\small add the transformed expression in }
+        \ENDIF
+      \UNTIL {$e_t = $ NIL $\wedge$ !TIME\_OUT}
+      \STATE $M_{T}$.add($af$, $e_t$); \label{alg:stoctrans:resultmap}
+    \ENDFOR
+\end{algorithmic}
+\end{algorithm}
+
+\subsubsection{转换规则库}
+
+我们的优化框架收集并实现了一系列的转换规则形成了一个转换规则库$R_{opt}$，这些转换规则均是根据数值计算专家所具备的专业知识总结而来并且是可扩展的，当规则库中的规则越来越丰富时，我们工具的优化能力相对应的也会越来越强大。
+ 
+本小节的剩余部分列举了规则库中当前实现的大部分转换规则，每一条转换规则都包含了待匹配形式以及转换后形式，我们会在计算代数式中去匹配待匹配的计算形式，若匹配成功，我们则可以将其转换成为对应的转换后形式，所有的转换规则在数学意义上均为等价的。
+
+\vspace{1mm}
+\begin{center}
+{\kaishu\zihao{4} 基础操作规则}
+\end{center}
+\vspace{1mm}
+
+\begin{itemize}
+  \item {\kaishu 负号规则} 
+  \begin{gather*}
+  -A \longleftrightarrow (-1) \times A 
+  \end{gather*}
+
+  \item {\kaishu 减法规则} 
+  \begin{gather*}
+  A - B \longleftrightarrow A + (-B) 
+  \end{gather*}
+
+  \item {\kaishu 除法规则} 
+  \begin{gather*}
+  A / B \longleftrightarrow A \times (1 / B) 
+  \end{gather*}
+
+  \item {\kaishu 对数规则} 
+  \begin{gather*}
+  e^{\ln X} \longleftrightarrow X  
+  \end{gather*}
+\end{itemize}
+
+\vspace{1mm}
+\begin{center}
+{\kaishu\zihao{4} 基本代数规则}
+\end{center}
+\vspace{1mm}
+
+\begin{itemize}
+  \item {\kaishu 交换律规则} 
+  \begin{gather*}
+  A \odot B \longleftrightarrow B \odot A  
+  \end{gather*}
+
+  \item {\kaishu 结合律规则} 
+  \begin{gather*}
+  A \odot B \odot C \longleftrightarrow A \odot (B \odot C) 
+  \end{gather*}
+
+  \item {\kaishu 分配率规则} 
+  \begin{gather*}
+  A \times (B + C) \longleftrightarrow A \times B + A \times C 
+  \end{gather*}
+\end{itemize}
+
+\vspace{1mm}
+\begin{center}
+{\kaishu\zihao{4} 分式规则}
+\end{center}
+\vspace{1mm}
+
+\begin{itemize}
+  \item {\kaishu 通分规则} 
+  \begin{gather*}
+  A / B + C / D \longleftrightarrow (AD+BC) / BD 
+  \end{gather*}
+
+  \item {\kaishu 约分规则} 
+  \begin{gather*}
+  AN / BN \longleftrightarrow A / B 
+  \end{gather*}
+
+  \item {\kaishu 分子规则} 
+  \begin{gather*}
+  (A+B) / (C+D) \longleftrightarrow (A+B)(A-B) / ((C+D)(A-B)) 
+  \end{gather*}
+
+  \item {\kaishu 分母规则} 
+  \begin{gather*}
+  (A+B) / (C+D) \longleftrightarrow (A+B)(C-D) / ((C+D)(C-D)) 
+  \end{gather*}
+\end{itemize}
+
+
+\vspace{1mm}
+\begin{center}
+{\kaishu\zihao{4} 多项式规则}
+\end{center}
+\vspace{1mm}
+
+\begin{itemize}
+  \item {\kaishu 累加规则} 
+  \begin{gather*}
+  \begin{array}{@{}c@{}} A_1 + A_2 + A_3 + ... + A_n \\ \forall A_{si}, A_{sj} \in \{A_1, A_2, ... , A_n\}, \text{ s.t. } i<j \rightarrow     A_{si}\leq A_{sj} \end{array} \\
+  \downarrow \\
+  A_{s1} + A_{s2} + A_{s3} + ... + A_{sn}
+  \end{gather*}
+
+  % itemize中段首使用两个全角空格来缩进
+  　　在科学计算方法中，我们有避免误差危害的若干原则，其中有一条便是注意运算次序，防止“大数”吃掉“小数”，如有多个数相加减，应按照绝对值有小到大的次序进行运算。针对这条原则，我们设计了这一条累加规则，因为在累加的过程中，如果不注意运算次序，在计算前N项和与第N+1项的加法操作时，由于加法操作的两边数量级相差很大，非常容易出现“大数”吃“小数”的情况，因此我们将这样的计算过程进行等价的转换，先对原计算项按照绝对值大小进行排序，然后再进行累加操作，避免产生误差。\\
+
+  \item {\kaishu 霍纳规则} 
+  \begin{gather*}
+  A_0 + A_1X + A_2X^2 + A_3X^3 + ... + A_nX^n \\
+  \downarrow \\
+  A_0 + X(A_1 + X(A_2 + ... + X(A_{n-1} + XA_n)))
+  \end{gather*}
+
+  　　霍纳算法是一种计算一元多次多项式求值的高效算法，由英国数学家威廉·乔治·霍纳发现并证明。其具体的算法如下，对于一个一元多次多项式：
+
+  \begin{gather*}
+    p(x) = \sum_{i=1}^{n} a_ix^i = a_0+a_1x+a_2x^2+a_3x^3+...+a_nx^n
+  \end{gather*}
+
+  其中$a_0,...,a_n$为实数，给定一个$x$的值$x_0$，我们需要计算$p(x0)$。为了完成这样的计算，我们首先定义一系列常数：
+
+  \begin{equation*}
+    \begin{split}
+    b_n & := a_n \\
+    b_{n-1} & := a_{n-1} + b_nx_0 \\
+    & \vdots  \\
+    b_0 & := a_0 + b_1x_0
+    \end{split}
+  \end{equation*}
+
+  则$b_0$便是我们需要计算的多项式的值。证明过程如下，我们可以将$p(x)$写成如下的形式：
+
+  \begin{gather*}
+    p(x) = a_0+x(a_1+x(a_2+...+x(a_{n-1}+a_nx))) 
+  \end{gather*}
+
+  不断将$b_i = a_i + b_{i+1}x_0$带入可以得到：
+
+  \begin{equation*}
+    \begin{split}
+    p(x_0) & = a_0+x_0(a_1+x_0(a_2+...+x_0(a_{n-1}+a_nx_0))) \\
+           & = a_0+x_0(a_1+x_0(a_2+...+x_0(b_{n-1}))) \\
+           & \vdots \\
+           & = a_0 + x_0b_1 \\
+           & = b_0
+    \end{split}
+  \end{equation*}
+
+  　　因此，最终算出的$b_0$的值即为多项式求值的结果。通过霍纳形式计算一元多次多项式的值可以显著提高计算效率，对于一个$n$次的多项式函数，用常规方法（用重复乘法计算幂，再把各项相加）计算出结果最多需要$n$次加法和$\frac{(n^{2}+n)}{2}$次乘法。若用迭代的方法计算幂则需要$n$次加法和$2n+1$次乘法。如果计算中的数值数据是以字节方式储存的，那么常规方法约需要$x$占用的字节的$2n$倍空间。而使用霍纳算法时，至多只需作$n$次加法和$n$次乘法，最多需要x占用的字节的n倍空间。因此，我们通过设计这样一条基于霍纳算法的转换规则来提高数值计算程序中一元多次多项式的计算效率。\\
+
+  \item {\kaishu 偏移规则} 
+  \begin{gather*}
+  A_0 + A_1X + A_2X^2 + A_3X^3 + ... + A_nX^n \\
+  \downarrow \\
+  B_0 + B_1(X - m) + B_2(X - m)^2 + ... + B_n(X - m)^n \text{ where } B_i=\sum_{k=0}^{n-i} \binom{i+k}{i}A_{i+k}m^k
+  \end{gather*}
+\end{itemize}
+
+\vspace{1mm}
+\begin{center}
+{\kaishu\zihao{4} 三角函数规则}
+\end{center}
+\vspace{1mm}
+
+\begin{itemize}
+  \item {\kaishu Tan规则} 
+  \begin{gather*}
+  \tan X \longleftrightarrow \sin X / \cos X
+  \end{gather*}
+
+  \item {\kaishu Sec规则} 
+  \begin{gather*}
+  \tan X \longleftrightarrow 1 / \cos X
+  \end{gather*}
+
+  \item {\kaishu Cot规则} 
+  \begin{gather*}
+  \cot X \longleftrightarrow \cos X / \sin X
+  \end{gather*}
+
+  \item {\kaishu Csc规则} 
+  \begin{gather*}
+  \csc X \longleftrightarrow 1 / \sin X
+  \end{gather*}
+
+  \item {\kaishu Sin加法规则} 
+  \begin{gather*}
+  \sin(A+B)  \longleftrightarrow \sin A \cos B + \cos A \sin B
+  \end{gather*}
+  
+  \item {\kaishu Cos加法规则} 
+  \begin{gather*}
+  \cos(A+B)  \longleftrightarrow \cos A \cos B - \sin A \sin B
+  \end{gather*}
+\end{itemize}
+
+\vspace{1mm}
+\begin{center}
+{\kaishu\zihao{4} 泰勒公式规则}
+\end{center}
+\vspace{1mm}
+
+\begin{itemize}
+
+  \item {\kaishu e的泰勒展开规则} 
+  \begin{gather*}
+  1 + X + X^2 / 2! + X^3 / 3! + X^4 / 4! + ... \longleftrightarrow \exp(X)
+  \end{gather*}
+
+  \item {\kaishu 对数函数泰勒展开规则} 
+  \begin{gather*}
+  - X - X^2 / 2 - X^3 / 3 - ... \wedge\ \left|X\right| < 1 \longleftrightarrow  \ln(1-X)
+  \end{gather*}
+
+  \item {\kaishu Sin函数泰勒展开规则} 
+  \begin{gather*}
+  X - X^3/3! + X^5/5! - X^7/7! + ... \longleftrightarrow  \sin(X)
+  \end{gather*}
+
+  \item {\kaishu Cos函数泰勒展开规则} 
+  \begin{gather*}
+  1 - X^2/2! + X^4/4! - X^6/6! + ... \longleftrightarrow  \cos(X)
+  \end{gather*}
+
+  　　在数学上，泰勒级数是指将一个函数表示成为无限项多项式求和的形式，也就是级数的形式，这些相加的项均为函数在某一点的求导所得。泰勒级数由英国数学家布鲁克·泰勒于1715年发表并命名。在实际运用中，因为不可能进行无限项的加法，泰勒级数需要截断，只取有限项进行加法，一个函数的有限项泰勒级数叫作泰勒多项式。在科学计算领域常用泰勒多项式来估算一个函数的值，由于只取了泰勒级数中的有限项，这种估算是存在误差的，可以使用泰勒定理来估算这种误差，保证程序的可靠性。
+
+  　　泰勒级数的定义，一个在实数或复数$a$邻域上的无穷可微实变函数或复变函数$f(x)$的泰勒级数是如下的幂级数：
+
+  \begin{gather*}
+    f(a)+\frac{f'(a)}{1!}(x-a)+\frac{f''(a)}{2!}(x-a)^2+\frac{f'''(a)}{3!}(x-a)^3+...
+  \end{gather*}
+
+  这里，$n!$表示$n$的阶乘，而 ${f^{(n)}(a)}$表示函数$f$在点$a$处的$n$阶导数。
+
+
+  　　在规则库中，我们添加了几个非常常用的函数的泰勒展开式规则，包括指数函数，对数函数，Sin函数的泰勒多项式的形式，尝试使用泰勒多项式对该函数进行计算，亦或者是当我们发现该计算过程是在使用泰勒多项式计算某个函数值时，我们将其替换为C库中的函数实现，以提成程序的执行效率以及精度。
+
+\end{itemize}
+
+\vspace{1mm}
+\begin{center}
+{\kaishu\zihao{4} 复数规则}
+\end{center}
+\vspace{1mm}
+
+\begin{itemize}
+
+  \item {\kaishu 复数的极坐标表示形式规则} 
+  \begin{gather*}
+    A + Bi \longleftrightarrow \sqrt {A^2 + B^2} e^{i\arctan(B/A)}
+  \end{gather*}
+  
+  　　复数有多种不同的表示形式，包括直角坐标形式（也叫作笛卡尔坐标形式），极坐标形式。
+
+  　　复数的基本单位是$i=\sqrt{-1}$，复数空间中的每个数都可以表示为$a+bi$的形式，其中$a$被称为实部，$b$被称为虚部，这种表示方法被称为复数的直角坐标形式。对应到复平面上，复平面的横纵坐标分别表示了复数的实部和虚部。
+
+  　　复数同样也可以通过极坐标的形式表示，每个复数$z$由其模$r = |z|$ ，以及其幅角$\phi=\arg(z)$唯一表示。其中$r=0$时，任意值的$\phi$均表示同一个复数，此时通常会将$\arg(0)$设置为$0$。当$r>0$时，幅角模以$2\pi$后时唯一的，也就是说，如果复数辐角的两个值只相差精确的$2\pi$的整数倍数，则它们被认为是等价的，通常情况下，我们会将$\phi$限制在$(-\pi, \pi]$内。于是我们就得到了复数的极坐标表示形式$z =(r, \phi)$。
+
+  　　极坐标不同表示之间可以相互转换，复数的极坐标形式到直角坐标形式的转换关系为：
+
+  \begin{equation*}
+    \begin{split}
+      x &= r \cos \phi \\
+      y &= r \sin \phi
+    \end{split}
+  \end{equation*}
+
+  复数的直角坐标形式到极坐标形式的转换关系为：
+
+  \begin{equation*}
+    \begin{split}
+      r & = \sqrt{x^2+y^2} \\
+      \phi & = 
+      \begin{cases}
+        \arctan(\frac{y}{x}) & \quad \text{if } x > 0 \\
+        \arctan(\frac{y}{x}) + \pi & \quad \text{if } x < 0 \text{ and } y \geq 0 \\
+        \arctan(\frac{y}{x}) - \pi & \quad \text{if } x < 0 \text{ and } y < 0 \\
+        +\frac{\pi}{2} & \quad \text{if } x = 0 \text{ and } y > 0 \\
+        -\frac{\pi}{2} & \quad \text{if } x = 0 \text{ and } y < 0 \\
+        \text{undefined} & \quad \text{if } x = 0 \text{ and } y = 0 \\
+      \end{cases}  
+    \end{split}
+  \end{equation*}
+
+  前面的公式要求非常繁杂的情况区分。但是很多编程语言提供了经常叫做atan2一个变体的反正切函数来处理这些细节。\\
+
+  复数的极坐标形式还可以通过欧拉公式写成如下的形式：
+
+  \begin{equation*}
+    z = r e^{i\phi}
+  \end{equation*}
+
+  复数在极坐标形式下，其乘除法、指数和开放根要比直角坐标形式下简单许多，例如复数的乘除法操作：
+
+  \begin{gather*}
+    r_1 e^{i\phi_1} \cdot r_2 e^{\phi_2} = r_1r_2 e^{i(\phi_1+\phi_2)} \\
+    \frac{r_1 e^{i\phi_1}}{r_2 e^{\phi_2}} = \frac{r_1}{r_2}e^{i(\phi_1-\phi_2)}
+  \end{gather*}
+
+  因此我们设计了一条关于复数不同表示形式的转换规则，可以提高关于复数的数值计算程序的运行效率。
+
+\end{itemize}
+
+\vspace{1mm}
+\begin{center}
+{\kaishu\zihao{4} 伽玛函数规则}
+\end{center}
+\vspace{1mm}
+
+\begin{itemize}
+
+  \item {\kaishu 斯特林伽玛规则} 
+  \begin{gather*}
+  (X-0.5)\ln X-X+\ln {2\pi}/2+\sum _{n=1}^{N}{{B_{2n}}/(2n(2n-1)X^{2n-1})} \\
+  \downarrow \\
+  \ln \Gamma(X)
+  \end{gather*}
+
+  \item {\kaishu 伽玛函数定义规则} 
+  \begin{gather*}
+    \Gamma(X) \longleftrightarrow X\Gamma(X-1) 
+  \end{gather*}
+
+  \item {\kaishu 伽玛函数近似规则} 
+  \begin{gather*}
+  \Gamma(X)\ \wedge\ \left|X\right| < \varepsilon \longleftrightarrow 1/X - \gamma \\
+  \Gamma(X)\ \wedge\ \left|X+1\right| < \varepsilon \longleftrightarrow \gamma - 1 - 1/(X + 1) \\
+  \Gamma(X)\ \wedge\ \left|X+2\right| < \varepsilon \longleftrightarrow (8 - 4 \gamma + 3 X - 2 \gamma X)/(4X + 8)
+  \end{gather*}
+
+  伽玛函数是阶乘函数在实数和复数上的扩展，对于实数部分为正的复数z，伽玛函数定义为：
+
+  \begin{equation*}
+    \Gamma (x) = \int_{0}^{\infty} \frac{t^{z-1}}{e^t} \mathrm{d}t 
+  \end{equation*}
+
+  此定义可以用解析开拓原理拓展到整个复数域上，非正整数外。特别的，当$n$为正整数时，伽玛定义为：
+
+  \begin{equation*}
+    \Gamma (n) = (n-1)!
+  \end{equation*}
+
+  伽玛斯特林规则实际上是使用斯特林公式对伽玛函数的一种近似计算。斯特林公式是一条用来去$n$的阶乘近似值的数学公式，其公式如下：
+
+  \begin{equation*}
+    n! \approx \sqrt{2\pi n}(\frac{n}{e})^n
+  \end{equation*}
+
+  对于所有的正整数$n$，有：
+
+  \begin{equation*}
+    n! = \prod (n) = \Gamma (n+1)
+  \end{equation*}
+
+  然而，伽玛函数与阶乘函数不同，其在实数与复数上也有定义，尽管如此，斯特林公式仍然是适用的，因此我们可以得到：
+  
+  \begin{equation*}
+    \ln \Gamma(z) = (z-\frac{1}{2})\ln z - z + \frac{\ln 2 \pi}{2} + 2 \int_{0}^{\infty}\frac{\arctan \frac{t}{z}}{\exp{2\pi t}-1} \mathrm{d} t
+  \end{equation*}
+
+  对上述式子反复进行分部积分，我们可以得到以下渐进展开式：
+
+  \begin{equation*}
+    \ln \Gamma(z) = (z-\frac{1}{2})\ln z - z + \frac{\ln 2 \pi}{2} + \sum_{n=1}^{\infty}\frac{(-1)^{n-1}B_n}{2n(2n-1)z^{2n-1}}
+  \end{equation*}
+
+  其中$B_n$是第$n$个伯努利数，以上便是斯特林伽玛规则的由来，利用斯特林公式对伽玛函数近似计算以提高程序的执行效率。
+
+  伽玛函数近似规则是通过一定的数学推导得到的伽玛函数在特定点附近的近似计算方式，相比于使用斯特林公式来近似计算，近似规则中的这些计算具有精度更高，运行速度更快的特点。
+
+\end{itemize}
+
+
+
 
 \subsection{路径合并}
 
