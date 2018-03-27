@@ -101,17 +101,17 @@
 \subsubsection{稳定输入域定义}
 对于一个计算过程$f$来说，我们记其浮点精度实现与任意精度实现所对应的计算过程分别为$F$和$M$，$D$为程序的输入域，对于任意输入$x \in D$，记$F(x)$与$M(x)$分别为以输入$x$去执行计算过程$f$的浮点精度实现以及任意精度实现所得到的计算结果。如果对一个输入域$I \subseteq D$，$I$上的任意输入$x$满足：
 
-\begin{align}
-  |\frac{F(x)-M(x)}{M(x)}| < \epsilon
-\end{align}
+\begin{align*}
+  |\frac{F(x)-M(x)}{M(x)}| < \varepsilon
+\end{align*}
 
 则我们称该输入域$I$为一个稳定的输入域。反之，若存在$x \in $，使得：
 
-\begin{align}
-  |\frac{F(x)-M(x)}{M(x)}| \geq \epsilon
-\end{align}
+\begin{align*}
+  |\frac{F(x)-M(x)}{M(x)}| \geq \varepsilon
+\end{align*}
 
-则我们称该输入域为不稳定输入域，其中$\epsilon$为参数，是一个很小的正数，用来表示优化框架所能容忍的最大的相对误差。
+则我们称该输入域为不稳定输入域，其中$\varepsilon$为参数，是一个很小的正数，用来表示优化框架所能容忍的最大的相对误差。
 
 \subsubsection{输入域划分}
 
@@ -126,10 +126,9 @@
   \caption{数值计算程序输入域划分图} \label{fig:inputspace} %Equivalence Space to Find a Stable Algebraic Form
 \end{figure}
 
-\subsubsection{稳定性分析方法}
+\subsubsection{稳定性分析整体算法}
 
-稳定分析的整体算法流程如算法\ref{alg:stabilityAnalysis}所示，首先我们会将程序的输入域划分为许多小区间，然后我们对每个小区间的稳定性进行判定，然后再将相同类型的小区间组合起来得到最终的稳定输入域，不稳定输入域以及未知输入域。对于每个小区间，首先，我们会使用区间分析的技术判定该小区间上的最大误差是否在一个可接受的范围内，如果是，我们则认为该小区间是稳定的，将其加入到稳定输入域中。紧接着，如果我们无法判定小区间是稳定的，我们会尝试着去在其中寻找不稳定的输入，我们会在该小区间上随机取一些输入点，将这些输入带入原始任意精度计算过程以及对应的浮点精度计算过程，得到两种计算过程结果的相对误差，若发现有产生较大误差的输入，我们则判定该小区间是不稳定的，否则我们将其纳入未知输入域，因为我们既无法证明该区间是稳定的，又无法找到该区间中的不稳定输入。
-
+稳定分析的整体算法流程如图\ref{alg:stabilityAnalysis}所示，对于一个较大的输入域，其可能包含了一部分稳定的输入域，也包含了一部分不稳定的输入域，因此直接对一个很大的输入域去进行判定其稳定性是不切实际的。与此同时，对于一个很小的输入域来讲，当其足够小时，其包含的输入较为有限，因此其稳定性也更加容易确定。基于这样的想法，在进行稳定性分析时，我们首先会将程序的输入域划分为许多小区间，然后我们对每个小区间的稳定性进行判定，然后再将相同类型的小区间合并起来得到最终的稳定输入域，不稳定输入域以及未知输入域。在算法\ref{alg:stabilityAnalysis}中，第1行对应的便是对整个的输入域进行划分，将其划分为多个等宽的小区间。接着，对每个小区间，我们会通过区间分析的技术判定该小区间上的最大误差是否在一个可以接受的范围内，如果是，我们便认为该小区间是稳定的，将其列入稳定的输入域，这一过程对应算法\ref{alg:stabilityAnalysis}中的第3-4行。由于区间分析技术有可能会放大该计算过程的最大误差，所以当我们的判定过程得到的最大误差超出可接受范围时，我们无法立即判定该小区间是不稳定的，这时候，我们会尝试去寻找该小区间中可能会引发不稳定计算的输入，具体的做法便是在该小区间内随机的取一些输入点，比较这些输入点在浮点精度计算以及任意精度计算下的计算结果，是否有较大偏差。如果发现产生了较大偏差，则判定该小区间是不稳定的，对应算法\ref{alg:stabilityAnalysis}中的第6-10行。也有可能的情况是，我们即无法使用区间分析的技术验证一个计算过程是稳定的，又无法在其中寻找到能够引发不稳定计算的输入点，对于这样的小区间，我们将其划分为未知输入域，即无法判定其稳定性的区间，对应算法\ref{alg:stabilityAnalysis}中的第12行。
 \begin{algorithm}[thb]
   \caption{Stablility Analysis Process}
   \label{alg:stabilityAnalysis}
@@ -138,7 +137,7 @@
 \ENSURE $S', E', U$ {{\footnotesize$//$}\small Stable subspace, Unstable subspace and Unknown subspace}
 \STATE $S_d$ $\leftarrow$ split($D$) {{\footnotesize$//$}\small Split input space to a set of small intervals}
 \FORALL {$d \in D$}
-\IF {$isIntervalStable(d)$}
+\IF {isIntervalStable($d$)}
 \STATE add($d$, $S'$)
 \ELSE
 \STATE $S_p$ $\leftarrow$ randomSamplePoints($d$) {{\footnotesize$//$}\small Randomly sample a few points in $d$}
@@ -152,6 +151,9 @@
 \ENDFOR
 \end{algorithmic}
 \end{algorithm}
+
+\subsubsection{稳定小区间判别原理}
+
 
 \subsection{路径提取}
 为了对不稳定输入域上的计算过程进行优化，我们必须将这些计算过程作为一个整体从程序中提取出来，整个计算过程被抽象成为了程序输出关于程序输入的一个计算代数式的形式，这便是路径提取模块所要完成的工作。并且，对于不同输入域上的输入，其对应的计算过程有可能是不同的，对应到程序的控制流图上，即程序在不同输入域上在程序控制流图上所执行的路径时不同的，我们需要对不稳定输入域上涉及到的所有的程序执行路径进行提取。在对程序的执行路径进行提取的同时，路径提取模块同时还会收集每一条执行路径所对应的约束，以便于后续计算过程优化结束后组合程序时使用。原计算过程经过路径提取后被抽象成为了$\{(Constrain, AlgebraForm)\}$这样的二元组的集合的形式，集合中每个元素均为一个二元组，代表了程序控制流图中的一条执行路径，包含了该执行路径的计算代数式以及对应的约束信息。
