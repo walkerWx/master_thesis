@@ -34,9 +34,10 @@ $(CLS): $(SOURCES)
 
 master_thesis:	 $(THESIS).pdf
 
-$(THESIS).pdf: $(CLS) $(INSTITUTE_LOGO) $(INSTITUTE_NAME) $(THESIS).tex $(THESISBIB) framework.tex experiment.tex background.tex introduction.tex
+$(THESIS).pdf: $(CLS) $(INSTITUTE_LOGO) $(INSTITUTE_NAME) $(THESIS).tex $(THESISBIB) framework.tex experiment.tex background.tex introduction.tex conclude.tex
 	xelatex $(THESIS).tex
 	bibtex $(THESIS)
+	xelatex $(THESIS).tex
 	xelatex $(THESIS).tex
 	open $(THESIS).pdf
 
