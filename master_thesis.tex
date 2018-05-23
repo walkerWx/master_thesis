@@ -140,7 +140,7 @@
 % 论文的提交日期，需设置年、月、日。
 \submitdate{2018年5月10日}
 % 论文的答辩日期，需设置年、月、日。
-\defenddate{2018年6月1日}
+\defenddate{2018年5月22日}
 % 论文的定稿日期，需设置年、月、日。此属性可选，默认值为最后一次编译时的日期，精确到日。
 %% \date{2013年5月1日}
 
@@ -152,7 +152,7 @@
 % 论文作者姓名的拼音
 \englishauthor{Wang Xie}
 % 导师姓名职称的英文
-\englishsupervisor{Professor Li Xuandong and Assistant Professor Tang En-Yi}
+\englishsupervisor{Professor Li Xuandong and Assistant Professor Tang Enyi}
 % 论文作者学科与专业的英文名
 \englishmajor{Computer Science and Technology}
 % 论文作者所在院系的英文名称
@@ -163,7 +163,7 @@
 % 格式，即``Month day, year''，其中``Month''为月份的英文名全称，首字母大写；``day''为
 % 该月中日期的阿拉伯数字表示；``year''为年份的四位阿拉伯数字表示。此属性可选，默认值为最后
 % 一次编译时的日期。
-\englishdate{April 22, 2018}
+\englishdate{May 10, 2018}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % 设置论文的中文摘要
@@ -206,7 +206,7 @@
 % 论文的中文摘要
 \begin{abstract}
 
-编写正确高效并且易于维护的程序在软件工程领域一直以来都是一件非常具有挑战性的工作，而数值计算程序作为一些安全攸关系统的核心部件，保障其安全性与正确性显得尤为重要。目前，绝大多数数值计算程序都是使用浮点精度类型来编写，但是浮点精度类型存在其固有的问题，浮点精度类型在计算过程中会引入舍入误差，因此编写浮点类型的数值程序的开发人员必须具备非常专业的数值计算知识才能够开发出计算稳定的浮点精度程序，并且这样的代码中往往包含了大量的精度相关的操作，导致程序非常复杂难以维护。另一方面，软件开发人员也通过提高程序精度甚至是使用任意精度程序的方式来保证数值程序的正确性，然而这样的程序代码的计算效率会比原来的浮点精度程序慢上成百上千倍，耗费大量的计算资源。
+编写正确高效并且易于维护的程序在软件工程领域一直以来都是一件非常具有挑战性的工作，而数值计算程序作为一些资源受限、安全攸关系统的核心部件，保障其正确性、安全性以及计算效率显得尤为重要。目前，绝大多数数值计算程序都是使用浮点精度类型来编写，但是浮点精度类型存在其固有的问题，浮点精度类型在计算过程中会引入舍入误差，因此编写浮点类型的数值程序的开发人员必须具备非常专业的数值计算知识才能够开发出计算稳定的浮点精度程序，并且这样的代码中往往包含了大量的精度相关的操作，导致程序非常复杂难以维护。另一方面，软件开发人员也通过提高程序精度甚至是使用任意精度程序的方式来保证数值程序的正确性，然而这样的程序代码的计算效率会比原来的浮点精度程序慢上成百上千倍，耗费大量的计算资源。
 
 针对上述问题，本文提出了一种针对数值计算程序的整体优化方法，能够将任意精度类型编写的数值计算程序自动优化成为高效并且正确的浮点类型的数值计算程序。软件开发人员只需要按照需求中的数学公式编写清晰且易维护的任意精度代码，该优化方法可以自动将这样的代码转换成为与之等价的、正确并且高效的浮点类型的代码。这样一来，不仅数值计算程序的安全性与正确性能够得到保障，而且大大提升原来任意精度程序的执行效率，软件开发人员也不用关注浮点精度类型的误差处理细节，提升了数值计算程序的开发效率。
 
@@ -216,7 +216,9 @@
   \item 
   本文提出了一种优化方法，能够将任意精度类型的数值计算程序转换成为与其等价的浮点类型的数值计算程序。该优化方法能够对程序的计算过程进行优化，进而使得编程人员只需以要用任意精度类型来设计以及实现数值计算程序。
   \item
-  基于上述优化方法，我们实现了一个数值程序的优化工具，该工具以任意精度类型数值计算程序作为输入，能够提取出程序的计算过程的数学形式，通过随机代数变换的技术对其进行数学上的等价变换，进一步寻找这些等价计算过程中计算稳定的形式来替换原来不稳定的计算形式，组成最终的优化后程序。
+  本文提出了一种稳定计算过程的搜索方法，该方法运用规则库中的规则，对不稳定的计算过程进行数学上的等价变换，能够找到一个不稳定计算过程的等价的稳定计算形式。
+  \item 
+  基于上述优化方法，我们实现了一个数值程序的优化工具，该工具共分为四个不同的模块，包括稳定性分析模块，路径提取模块，随机代数变换模块以及路径合并模块。该工具以任意精度类型数值计算程序作为输入，能够生成与原任意精度数值程序等价的更为高效的浮点精度程序。
   \item 
   我们在一些测试程序以及GNU科学计算库上评估了我们的优化工具，我们的工具能够成功的检测到这些程序中不稳定的计算过程并实现对这些程序的优化。
 \end{itemize}
@@ -263,11 +265,9 @@ The main contriutions of this paper are as follows:
   developers to think and design their numerical programs in terms of real  
   number directly.
   \item 
-  We implement our global optimization framework with a stochastic algebraic
-  transformation technique, which randomly searches the mathematically
-  equivalent process of the input program with a few algebraic algorithms 
-  and generates the optimized code with an automatic verification of numerical
-  stablility.
+  We propose a stochastic algebraic transformation algorithm, which randomly searches the mathematically equivalent process of the input program with a few algebraic algorithms and generates the optimized code with an automatic verification of numerical stablility. 
+  \item 
+  Based on the above optimization framework, we implement an optimization tool consisting of four different modules, including stablility analysis, trace extraction, stochastic algorithm transformation and trace merging. The tool takes an arbitrary-precision program as input and can generate more efficient floating-point program that are equivalent to the original program.
   \item 
   We evaluate our approch on a few test subjects from the literature and also
   the GNU Scientific Library. Our toolchain successfully detects and diagnoses
